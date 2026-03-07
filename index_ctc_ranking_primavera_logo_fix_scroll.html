@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CTC - Ranking de primavera</title>
+  <style>
+    :root{
+      --bg:#0b1020; --bg2:#111935; --card:rgba(18,28,58,.88); --line:rgba(255,255,255,.10);
+      --text:#eef2ff; --muted:#9bb0da; --accent:#7c5cff; --accent2:#35d07f; --warn:#ffcc66; --danger:#ff6b6b;
+      --radius:18px; --shadow:0 16px 36px rgba(0,0,0,.28);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:
+        radial-gradient(1000px 550px at 10% -10%, rgba(124,92,255,.23), transparent 58%),
+        radial-gradient(900px 480px at 100% 0%, rgba(53,208,127,.16), transparent 56%),
+        linear-gradient(180deg, var(--bg), #070b16 75%);
+    }
+    header{position:sticky;top:0;z-index:10;background:rgba(8,12,24,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+    .wrap{max-width:1380px;margin:0 auto;padding:14px}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+    .titleBox{display:flex;align-items:center;gap:12px;min-width:0}
+    .brandLogo{width:44px;height:44px;border-radius:14px;border:1px solid rgba(124,92,255,.45);background:linear-gradient(135deg, rgba(124,92,255,.22), rgba(53,208,127,.15));display:grid;place-items:center;font-weight:1000;font-size:20px;box-shadow:var(--shadow);position:relative;overflow:hidden;flex:0 0 auto}
+    .brandLogo img{width:100%;height:100%;object-fit:cover;display:block}
+    .brandLogo span{display:grid;place-items:center;width:100%;height:100%;font-weight:1000;letter-spacing:.5px}
+    .brandLogo.has-image span{display:none}
+    h1{margin:0;font-size:20px}
+    .sub{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.35}
+    .badge{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--muted);font-size:12px;font-weight:800}
+
+    main{max-width:1380px;margin:0 auto;padding:14px;display:grid;gap:14px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .cardHead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 15px;border-bottom:1px solid var(--line)}
+    .cardHead h2{margin:0;font-size:14px}
+    .cardHead small{color:var(--muted);font-weight:800}
+    .pad{padding:14px}
+
+    .tabs{display:flex;flex-wrap:wrap;gap:8px}
+    .tab{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:var(--text);padding:10px 13px;border-radius:12px;cursor:pointer;font-weight:900}
+    .tab.active{background:rgba(124,92,255,.18);border-color:rgba(124,92,255,.55)}
+
+    .controls{display:grid;grid-template-columns:1.3fr .9fr .9fr .9fr;gap:10px;margin-top:12px}
+    @media (max-width: 950px){.controls{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}.summaryGrid{grid-template-columns:1fr}}
+    @media (max-width: 620px){.controls{grid-template-columns:1fr}}
+
+    label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
+    select,input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:var(--text);outline:none}
+    input::placeholder{color:#a6b3d4}
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    button{cursor:pointer;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:rgba(124,92,255,.22);color:var(--text);font-weight:900}
+    button.secondary{background:transparent}
+    button.good{background:rgba(53,208,127,.18);border-color:rgba(53,208,127,.32)}
+
+    .summaryGrid{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}
+    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
+    .kpis{display:grid;grid-template-columns:repeat(4,minmax(110px,1fr));gap:10px}
+    @media (max-width: 820px){.kpis{grid-template-columns:repeat(2,minmax(110px,1fr))}}
+    .kpi{border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.05);padding:12px}
+    .kpi .k{color:var(--muted);font-size:11px;font-weight:900}
+    .kpi .v{font-size:20px;font-weight:1000;margin-top:5px}
+    .kpi .s{color:var(--muted);font-size:12px;margin-top:4px}
+    .hint{font-size:12px;color:var(--muted);line-height:1.4}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:9px 8px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle;text-align:left}
+    th{color:var(--muted);font-weight:900;white-space:nowrap}
+    td.center,th.center{text-align:center}
+
+    tr.promote td{background:rgba(53,208,127,.11)}
+    tr.promote td:first-child{border-left:3px solid rgba(53,208,127,.85)}
+    tr.relegate td{background:rgba(255,107,107,.10)}
+    tr.relegate td:first-child{border-left:3px solid rgba(255,107,107,.85)}
+
+    details summary{cursor:pointer;list-style:none;padding:13px 15px;font-weight:900;border-bottom:1px solid var(--line)}
+    details summary::-webkit-details-marker{display:none}
+    details summary::after{content:"▾";float:right;color:var(--muted)}
+    details[open] summary::after{content:"▴"}
+
+    .matrixWrap{overflow:auto}
+    .matrix{border-collapse:separate;border-spacing:0;min-width:980px}
+    .matrix th,.matrix td{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:6px 7px;text-align:center;font-size:12px}
+    .matrix thead th{position:sticky;top:0;background:#141d3d;z-index:2}
+    .matrix .stickyCol{position:sticky;left:0;background:#141d3d;z-index:1;text-align:left;min-width:190px}
+    .matrix .diag{background:rgba(255,255,255,.05);font-weight:900;color:var(--muted)}
+    .matrix .filled{background:rgba(53,208,127,.10)}
+    .matrix .pending{color:var(--muted)}
+    .matrix small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+
+    .legend{display:flex;gap:10px;flex-wrap:wrap}
+    .pill{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.04);font-size:12px;color:var(--muted)}
+    .dot{width:10px;height:10px;border-radius:99px;display:inline-block}
+
+    .status{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid rgba(255,255,255,.14)}
+    .status.ok{color:var(--accent2);border-color:rgba(53,208,127,.35);background:rgba(53,208,127,.08)}
+    .status.pending{color:var(--warn);border-color:rgba(255,204,102,.32);background:rgba(255,204,102,.08)}
+
+    .twoCol{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .typeBtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .typeBtn{padding:8px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);cursor:pointer;font-size:12px;font-weight:900}
+    .typeBtn.active{background:rgba(124,92,255,.20);border-color:rgba(124,92,255,.55)}
+    .note{margin-top:10px;padding:10px 12px;border:1px dashed rgba(255,255,255,.18);border-radius:12px;color:var(--muted);font-size:12px;line-height:1.4}
+
+    .tableScroll{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
+    .tableScroll::-webkit-scrollbar{height:10px}
+    .tableScroll::-webkit-scrollbar-thumb{background:rgba(124,92,255,.45);border-radius:999px}
+    .tableScroll::-webkit-scrollbar-track{background:rgba(255,255,255,.05);border-radius:999px}
+    #standingsTable{min-width:1000px}
+    #matchesTable{min-width:640px}
+
+    @media (max-width: 760px){
+      header{position:static}
+      .wrap,main{padding:10px}
+      .top{align-items:flex-start}
+      .titleBox{align-items:flex-start}
+      .brandLogo{width:58px;height:58px;border-radius:18px;font-size:24px;flex:0 0 auto}
+      h1{font-size:18px;line-height:1.15}
+      .sub{font-size:11px;max-width:none}
+      .badge{width:100%;justify-content:center}
+      .controls,.summaryGrid,.grid,.twoCol{grid-template-columns:1fr !important}
+      .cardHead{padding:12px}
+      .pad{padding:12px}
+      .kpis{grid-template-columns:1fr 1fr}
+      select,input,button{font-size:16px;min-height:44px}
+      button{width:100%}
+      .btns{display:grid;grid-template-columns:1fr;gap:10px}
+      .typeBtns{display:grid;grid-template-columns:1fr;gap:8px}
+      .typeBtn{text-align:center}
+      .legend{gap:8px}
+      .pill{font-size:11px;padding:6px 8px}
+      .matrix{min-width:760px}
+      .matrix .stickyCol{min-width:155px}
+      .matrix th,.matrix td{font-size:11px;padding:5px}
+      #standingsTable{min-width:980px}
+      #standingsTable th:nth-child(1), #standingsTable td:nth-child(1){width:44px}
+      #standingsTable th:nth-child(2), #standingsTable td:nth-child(2){min-width:220px}
+      #standingsTable th:nth-child(n+3), #standingsTable td:nth-child(n+3){min-width:64px}
+      #matchesTable th:nth-child(4), #matchesTable td:nth-child(4){white-space:nowrap}
+      .note,.hint{font-size:11px}
+    }
+
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <div class="titleBox">
+          <div class="brandLogo" aria-label="Logo del ranking">
+            <img src="logo.png" alt="Logo CTC" onload="this.parentNode.classList.add('has-image')" onerror="this.remove()">
+            <span>CTC</span>
+          </div>
+          <div>
+            <h1>CTC - Ranking de primavera</h1>
+            <div class="sub">5 categorías · 16 jugadores por categoría · partidos libres sin calendario · cruces plegables</div>
+          </div>
+        </div>
+      </div>
+      <div class="badge">Clasificación provisional automática</div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <div class="cardHead">
+      <h2>⚙️ Categoría y filtros</h2>
+      <small id="meta"></small>
+    </div>
+    <div class="pad">
+      <div class="tabs" id="tabs"></div>
+      <div class="controls">
+        <div>
+          <label>Filtrar por jugador</label>
+          <select id="playerFilter"></select>
+        </div>
+        <div>
+          <label>Mostrar</label>
+          <select id="viewMode">
+            <option value="all">Todos los enfrentamientos</option>
+            <option value="done">Solo con resultado</option>
+            <option value="pending">Solo pendientes</option>
+          </select>
+        </div>
+        <div>
+          <label>Acceso rápido por nº</label>
+          <select id="quickPlayer"></select>
+        </div>
+        <div>
+          <label>Última sincronización</label>
+          <input id="syncInfo" value="Cargando..." readonly />
+        </div>
+      </div>
+      <div class="hint" style="margin-top:10px">Empate a un set = <b>2 puntos por jugador</b>. Resultado parcial de un solo set = <b>2 puntos</b> para quien gana ese set y <b>1 punto</b> para el rival.</div>
+    </div>
+  </section>
+
+  <section class="summaryGrid">
+    <div class="card">
+      <div class="cardHead">
+        <h2>🏆 Clasificación provisional</h2>
+        <small id="standHint"></small>
+      </div>
+      <div class="pad">
+        <div class="hint" style="margin-bottom:10px">En móvil puedes <b>deslizar lateralmente</b> la tabla para ver todos los datos.</div>
+        <div class="tableScroll">
+        <table id="standingsTable">
+          <thead>
+            <tr>
+              <th class="center">#</th>
+              <th>Jugador</th>
+              <th class="center">PTS</th>
+              <th class="center">PJ</th>
+              <th class="center">PG</th>
+              <th class="center">PE</th>
+              <th class="center">PP</th>
+              <th class="center">SF</th>
+              <th class="center">SC</th>
+              <th class="center">DF</th>
+              <th class="center">JF</th>
+              <th class="center">JC</th>
+              <th class="center">DJ</th>
+            </tr>
+          </thead>
+          <tbody id="standingsTbody"></tbody>
+        </table>
+        </div>
+        <div class="hint" style="margin-top:10px">Orden: puntos, enfrentamiento directo dentro del empate, juegos ganados y diferencia de juegos. Verde = ascenso provisional. Rojo = descenso provisional.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cardHead">
+        <h2>📊 Resumen del jugador</h2>
+        <small id="playerStatsTitle">Selecciona un jugador</small>
+      </div>
+      <div class="pad">
+        <div class="kpis" id="kpis"></div>
+        <div class="note" id="playerExtra">Elige un jugador en el filtro para ver su resumen y sus próximos rivales pendientes.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <details>
+        <summary>🔢 Tabla de cruces — pulsar para ver <span id="crossMeta" style="margin-left:10px;color:var(--muted);font-weight:700"></span></summary>
+        <div class="pad">
+          <div class="legend" style="margin-bottom:10px">
+            <span class="pill"><span class="dot" style="background:rgba(53,208,127,.8)"></span> con resultado</span>
+            <span class="pill"><span class="dot" style="background:rgba(255,255,255,.35)"></span> pendiente</span>
+            <span class="pill">Cada celda muestra el resultado del jugador de la fila</span>
+          </div>
+          <div class="matrixWrap">
+            <table class="matrix" id="crossTable"></table>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <div class="cardHead">
+        <h2>🧾 Subir / editar resultado</h2>
+        <small id="editHint"></small>
+      </div>
+      <div class="pad">
+        <div class="twoCol">
+          <div>
+            <label>Jugador 1</label>
+            <select id="playerA"></select>
+          </div>
+          <div>
+            <label>Jugador 2</label>
+            <select id="playerB"></select>
+          </div>
+        </div>
+
+        <div class="typeBtns" id="typeBtns"></div>
+
+        <div class="twoCol" style="margin-top:12px">
+          <div>
+            <label>Set 1</label>
+            <div class="twoCol">
+              <input id="s1a" type="number" min="0" max="7" placeholder="J1" />
+              <input id="s1b" type="number" min="0" max="7" placeholder="J2" />
+            </div>
+          </div>
+          <div>
+            <label>Set 2</label>
+            <div class="twoCol">
+              <input id="s2a" type="number" min="0" max="7" placeholder="J1" />
+              <input id="s2b" type="number" min="0" max="7" placeholder="J2" />
+            </div>
+          </div>
+        </div>
+
+        <div class="btns">
+          <button id="saveBtn" class="good">Guardar resultado</button>
+          <button id="clearBtn" class="secondary">Borrar resultado</button>
+          <button id="refreshBtn" class="secondary">Actualizar</button>
+        </div>
+
+        <div class="note" id="scoreNote"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <details>
+      <summary>📋 Lista de enfrentamientos — pulsar para ver <span id="matchCount" style="margin-left:10px;color:var(--muted);font-weight:700"></span></summary>
+      <div class="pad">
+        <div class="tableScroll">
+        <table id="matchesTable">
+          <thead>
+            <tr>
+              <th>Jugador 1</th>
+              <th>Jugador 2</th>
+              <th>Resultado</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="matchesTbody"></tbody>
+        </table>
+        </div>
+      </div>
+    </details>
+  </section>
+</main>
+
+<script>
+const STORAGE_KEY = 'ctc-ranking-primavera-2026-local';
+const NAMESPACE = 'ctc-primavera-2026';
+const WORKER_URL = 'https://liga-tenis-api.ligatenisdeportiva.workers.dev';
+
+const LEAGUE = {
+  '1ª Categoría': [
+    '1. Andrés Cristóbal','2. Raúl Carpintero','3. Oscar García','4. Víctor Vívar','5. Javier Francés','6. Fernando Maestro','7. Sergio Martínez','8. Pablo Quintana',
+    '9. Víctor Cadiñanos','10. David Sagredo','11. Gonzalo Espinola','12. Juan José García','13. Luis J. Jiménez','14. Javier Hernando','15. Rodrigo Bustamante','16. Manuel Cuenca'
+  ],
+  '2ª Categoría': [
+    '1. Félix Martín','2. Christian Santamaría','3. Pedro Santesteban','4. Miguel Ángel Vicente','5. Juan Carlos López','6. David Harón','7. Rafael García','8. Juan Carlos García',
+    '9. Enrique Herrero','10. Félix Tamayo','11. Carlos Javier Santos','12. Víctor Pérez','13. Alberto Vázquez','14. Roberto Catalina','15. Ángel Cerdá','16. Eduardo Dobarco'
+  ],
+  '3ª Categoría': [
+    '1. Diego Mercado','2. Rodrigo Santamaría','3. Arturo Pereda','4. Carlos Polanco','5. Alfonso Vegas','6. Felipe González','7. Ángel Domingo','8. Celestino Ricardo',
+    '9. Juan Carlos Uranga','10. Alberto Vega','11. Ricardo Alonso','12. Carmelo García','13. Jorge Marín','14. David García','15. Alberto Tovar','16. José Manuel Luis'
+  ],
+  '4ª Categoría': [
+    '1. Juan Diego Camarero','2. José Antonio Miguel','3. Juan Goizueta','4. Michel García','5. Óscar Tajadura','6. Víctor del Rincón','7. Alejandro Arnáiz','8. Javier Iglesias',
+    '9. Mario Gómez','10. Lorenzo Orcajo','11. Emilio Martín Lucas','12. Ignacio Ridruejo','13. Javier Tubilleja Ausín','14. Ángel Domingo Vicario','15. Rafael Pérez','16. Ignacio A. Portillo'
+  ],
+  '5ª Categoría': [
+    '1. Ana Martín','2. Miguel Pérez','3. Eduardo González','4. Basilio Pascual','5. Enrique Villumbrales','6. Carlos García','7. Oscar Bustos','8. Álvaro Mercado',
+    '9. Diego Bisabarros Gil','10. Ricardo Álvarez','11. Isidro Prado','12. Javier Grande','13. Elías Escribano','14. José Antonio Barón','15. Ramsés Alarcón','16. Pablo Castro'
+  ]
+};
+
+function buildMatches(players){
+  const out=[];
+  for(let i=0;i<players.length;i++){
+    for(let j=i+1;j<players.length;j++){
+      out.push({a:players[i], b:players[j]});
+    }
+  }
+  return out;
+}
+
+const MATCHES = Object.fromEntries(Object.entries(LEAGUE).map(([cat,players]) => [cat, buildMatches(players)]));
+
+const state = {
+  category: Object.keys(LEAGUE)[0],
+  filterPlayer: '__ALL__',
+  quickPlayer: '__ALL__',
+  viewMode: 'all',
+  resultType: 'full',
+  results: {},
+  syncLabel: 'Sin sincronizar'
+};
+
+function categoryPlayers(){ return LEAGUE[state.category]; }
+function categoryMatches(){ return MATCHES[state.category]; }
+function matchKey(cat, a, b){ return `${NAMESPACE}__${cat}__${a}__${b}`; }
+function getBucket(){ if(!state.results[state.category]) state.results[state.category] = {}; return state.results[state.category]; }
+function getMatchRecord(m){ return getBucket()[matchKey(state.category, m.a, m.b)] || null; }
+function stripNum(label){ return label.replace(/^\d+\.\s*/, ''); }
+function playerNum(label){ return Number((label.match(/^(\d+)\./)||[])[1]||0); }
+
+function localLoad(){
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }catch{ return {}; }
+}
+function localSave(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.results)); }
+
+async function workerRequest(payload){
+  const r = await fetch(WORKER_URL, {
+    method:'POST', mode:'cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+  });
+  if(!r.ok) throw new Error((await r.text().catch(()=>'')) || `HTTP ${r.status}`);
+  const ct = (r.headers.get('content-type') || '').toLowerCase();
+  return ct.includes('application/json') ? r.json() : r.text();
+}
+
+function normalizeWorkerData(data){
+  const out = {};
+  if(!data || typeof data !== 'object') return out;
+  for(const [k,v] of Object.entries(data)){
+    if(!k.startsWith(`${NAMESPACE}__`)) continue;
+    const parts = k.split('__');
+    const cat = parts[1];
+    if(!out[cat]) out[cat] = {};
+    out[cat][k] = v;
+  }
+  return out;
+}
+
+async function refreshOnlineOnce(){
+  state.syncLabel = 'Intentando sincronizar...';
+  renderSync();
+  try{
+    const online = normalizeWorkerData(await workerRequest({action:'read'}));
+    state.results = Object.keys(online).length ? online : (localLoad() || {});
+    state.syncLabel = 'Online';
+  }catch(e){
+    state.results = localLoad() || {};
+    state.syncLabel = 'Modo local';
+  }
+  renderAll();
+}
+
+function renderSync(){ document.getElementById('syncInfo').value = state.syncLabel; }
+
+function validSet(a,b){
+  return Number.isInteger(a) && Number.isInteger(b) && a >= 0 && b >= 0 && a <= 7 && b <= 7 && a !== b;
+}
+
+function visibleMatches(){
+  return categoryMatches().filter(m => {
+    const rec = getMatchRecord(m);
+    if(state.filterPlayer !== '__ALL__' && m.a !== state.filterPlayer && m.b !== state.filterPlayer) return false;
+    if(state.viewMode === 'done' && !rec) return false;
+    if(state.viewMode === 'pending' && rec) return false;
+    return true;
+  });
+}
+
+function scoreFromRecord(rec){
+  if(!rec) return '—';
+  if(rec.type === 'partial') return `${rec.s1a}-${rec.s1b}`;
+  return `${rec.s1a}-${rec.s1b} / ${rec.s2a}-${rec.s2b}`;
+}
+
+function computeStatsForRecord(rec){
+  let setsA = 0, setsB = 0;
+  let gamesA = rec.s1a, gamesB = rec.s1b;
+  if(rec.s1a > rec.s1b) setsA++; else setsB++;
+  if(rec.type === 'full'){
+    gamesA += rec.s2a; gamesB += rec.s2b;
+    if(rec.s2a > rec.s2b) setsA++; else setsB++;
+  }
+  let pointsA = 1 + setsA;
+  let pointsB = 1 + setsB;
+  if(rec.type === 'walkoverA'){ pointsA = 3; pointsB = 0; }
+  if(rec.type === 'walkoverB'){ pointsA = 0; pointsB = 3; }
+  return { setsA, setsB, gamesA, gamesB, pointsA, pointsB };
+}
+
+function headToHeadBundle(groupPlayers){
+  const set = new Set(groupPlayers);
+  const rows = {};
+  groupPlayers.forEach(p => rows[p] = { pts:0, gf:0, ga:0, played:0 });
+  for(const m of categoryMatches()){
+    if(!set.has(m.a) || !set.has(m.b)) continue;
+    const rec = getMatchRecord(m);
+    if(!rec) continue;
+    const s = computeStatsForRecord(rec);
+    rows[m.a].pts += s.pointsA; rows[m.b].pts += s.pointsB;
+    rows[m.a].gf += s.gamesA; rows[m.a].ga += s.gamesB; rows[m.a].played++;
+    rows[m.b].gf += s.gamesB; rows[m.b].ga += s.gamesA; rows[m.b].played++;
+  }
+  return rows;
+}
+
+function computeStandings(){
+  const base = {};
+  categoryPlayers().forEach(p => base[p] = { player:p, pts:0, pj:0, pg:0, pe:0, pp:0, sf:0, sc:0, jf:0, jc:0 });
+
+  for(const m of categoryMatches()){
+    const rec = getMatchRecord(m); if(!rec) continue;
+    const s = computeStatsForRecord(rec);
+    const A = base[m.a], B = base[m.b];
+    A.pj++; B.pj++;
+    A.pts += s.pointsA; B.pts += s.pointsB;
+    A.sf += s.setsA; A.sc += s.setsB; B.sf += s.setsB; B.sc += s.setsA;
+    A.jf += s.gamesA; A.jc += s.gamesB; B.jf += s.gamesB; B.jc += s.gamesA;
+    if(rec.type === 'full' && s.setsA === s.setsB){ A.pe++; B.pe++; }
+    else if(s.pointsA === s.pointsB){ A.pe++; B.pe++; }
+    else if(s.pointsA > s.pointsB){ A.pg++; B.pp++; }
+    else { B.pg++; A.pp++; }
+  }
+
+  const arr = Object.values(base).map(x => ({ ...x, df:x.sf-x.sc, dj:x.jf-x.jc }));
+  arr.sort((a,b) => {
+    if(b.pts !== a.pts) return b.pts - a.pts;
+    return 0;
+  });
+
+  let i = 0;
+  while(i < arr.length){
+    let j = i+1;
+    while(j < arr.length && arr[j].pts === arr[i].pts) j++;
+    if(j - i > 1){
+      const tied = arr.slice(i,j).map(x => x.player);
+      const hh = headToHeadBundle(tied);
+      arr.slice(i,j).sort((a,b) => {
+        const ha = hh[a.player], hb = hh[b.player];
+        return (hb.pts-ha.pts) || (hb.gf-hb.ga) - (ha.gf-ha.ga) || (hb.gf-ha.gf) || (b.dj-a.dj) || (b.jf-a.jf) || stripNum(a.player).localeCompare(stripNum(b.player),'es');
+      }).forEach((row,idx) => arr[i+idx] = row);
+    }
+    i = j;
+  }
+
+  arr.sort((a,b) => (b.pts-a.pts) || (0));
+  i = 0;
+  while(i < arr.length){
+    let j = i+1;
+    while(j < arr.length && arr[j].pts === arr[i].pts) j++;
+    if(j - i > 1){
+      const tied = arr.slice(i,j).map(x => x.player);
+      const hh = headToHeadBundle(tied);
+      arr.slice(i,j).sort((a,b) => {
+        const ha = hh[a.player], hb = hh[b.player];
+        return (hb.pts-ha.pts) || (hb.gf-ha.gf) || ((hb.gf-hb.ga)-(ha.gf-ha.ga)) || (b.jf-a.jf) || (b.dj-a.dj) || stripNum(a.player).localeCompare(stripNum(b.player),'es');
+      }).forEach((row,idx) => arr[i+idx] = row);
+    }
+    i = j;
+  }
+
+  arr.forEach((row, idx) => row.rank = idx + 1);
+  return arr;
+}
+
+function playerSummary(player){
+  if(!player || player === '__ALL__') return null;
+  const rows = computeStandings();
+  const row = rows.find(r => r.player === player);
+  const pending = categoryMatches().filter(m => (m.a === player || m.b === player) && !getMatchRecord(m));
+  return { row, pending };
+}
+
+function renderTabs(){
+  const box = document.getElementById('tabs'); box.innerHTML = '';
+  Object.keys(LEAGUE).forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'tab' + (cat === state.category ? ' active' : '');
+    b.textContent = cat;
+    b.onclick = () => { state.category = cat; state.filterPlayer = '__ALL__'; state.quickPlayer = '__ALL__'; renderAll(); };
+    box.appendChild(b);
+  });
+}
+
+function renderFilters(){
+  const pf = document.getElementById('playerFilter');
+  const qp = document.getElementById('quickPlayer');
+  pf.innerHTML = ''; qp.innerHTML = '';
+  [{value:'__ALL__', text:'(Todos)'}, ...categoryPlayers().map(p => ({value:p, text:p}))].forEach(item => {
+    const o1 = document.createElement('option'); o1.value = item.value; o1.textContent = item.text; pf.appendChild(o1);
+    const o2 = document.createElement('option'); o2.value = item.value; o2.textContent = item.text; qp.appendChild(o2);
+  });
+  pf.value = state.filterPlayer;
+  qp.value = state.quickPlayer;
+  pf.onchange = () => { state.filterPlayer = pf.value; state.quickPlayer = pf.value; renderAll(); };
+  qp.onchange = () => {
+    state.quickPlayer = qp.value;
+    state.filterPlayer = qp.value;
+    const player = qp.value;
+    if(player !== '__ALL__'){
+      document.getElementById('playerA').value = player;
+      const other = categoryPlayers().find(p => p !== player) || player;
+      if(document.getElementById('playerB').value === player) document.getElementById('playerB').value = other;
+      syncEditor();
+    }
+    renderAll();
+  };
+  const vm = document.getElementById('viewMode');
+  vm.value = state.viewMode;
+  vm.onchange = () => { state.viewMode = vm.value; renderList(); renderCrossTable(); };
+}
+
+function renderMeta(){
+  const played = categoryMatches().filter(m => !!getMatchRecord(m)).length;
+  document.getElementById('meta').textContent = `${categoryPlayers().length} jugadores · ${categoryMatches().length} partidos · ${played} resultados cargados`;
+}
+
+function renderStandings(){
+  const rows = computeStandings();
+  const tb = document.getElementById('standingsTbody'); tb.innerHTML = '';
+  document.getElementById('standHint').textContent = `${rows.filter(r => r.pj > 0).length} jugadores con al menos un partido`;
+  rows.forEach((r, idx) => {
+    const tr = document.createElement('tr');
+    if(idx < 4) tr.classList.add('promote');
+    if(idx >= rows.length - 4) tr.classList.add('relegate');
+    tr.innerHTML = `<td class="center">${r.rank}</td><td><b>${r.player}</b></td><td class="center"><b>${r.pts}</b></td><td class="center">${r.pj}</td><td class="center">${r.pg}</td><td class="center">${r.pe}</td><td class="center">${r.pp}</td><td class="center">${r.sf}</td><td class="center">${r.sc}</td><td class="center">${r.df}</td><td class="center">${r.jf}</td><td class="center">${r.jc}</td><td class="center">${r.dj}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function renderPlayerStats(){
+  const p = state.filterPlayer !== '__ALL__' ? state.filterPlayer : null;
+  const title = document.getElementById('playerStatsTitle');
+  const kpis = document.getElementById('kpis');
+  const extra = document.getElementById('playerExtra');
+  kpis.innerHTML = '';
+  if(!p){
+    title.textContent = 'Selecciona un jugador';
+    extra.textContent = 'Elige un jugador en el filtro para ver su resumen y sus próximos rivales pendientes.';
+    return;
+  }
+  const data = playerSummary(p);
+  if(!data){ title.textContent = stripNum(p); return; }
+  title.textContent = stripNum(p);
+  const row = data.row;
+  const add = (k,v,s='') => { const d=document.createElement('div'); d.className='kpi'; d.innerHTML=`<div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div>`; kpis.appendChild(d); };
+  add('Posición', row.rank, state.category);
+  add('Puntos', row.pts, `${row.pg}V · ${row.pe}E · ${row.pp}D`);
+  add('Sets', `${row.sf}-${row.sc}`, `Dif ${row.df}`);
+  add('Juegos', `${row.jf}-${row.jc}`, `Dif ${row.dj}`);
+  if(data.pending.length){
+    extra.innerHTML = '<b>Pendientes:</b><br>' + data.pending.map(m => `${stripNum(m.a)} vs ${stripNum(m.b)}`).join('<br>');
+  } else {
+    extra.innerHTML = '<b>Pendientes:</b> no le quedan enfrentamientos sin resultado.';
+  }
+}
+
+function renderCrossTable(){
+  const table = document.getElementById('crossTable');
+  const players = categoryPlayers();
+  table.innerHTML = '';
+  const thead = document.createElement('thead');
+  const trh = document.createElement('tr');
+  trh.innerHTML = '<th class="stickyCol">Jugador</th>' + players.map(p => `<th>${playerNum(p)}</th>`).join('');
+  thead.appendChild(trh); table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+
+  let done = 0;
+  players.forEach(rowP => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<th class="stickyCol">${rowP}<small>${stripNum(rowP)}</small></th>`;
+    players.forEach(colP => {
+      const td = document.createElement('td');
+      if(rowP === colP){ td.className = 'diag'; td.textContent = '—'; }
+      else {
+        const [a,b] = playerNum(rowP) < playerNum(colP) ? [rowP,colP] : [colP,rowP];
+        const rec = getBucket()[matchKey(state.category, a, b)];
+        if(rec){
+          done++;
+          td.className = 'filled';
+          if(rowP === a) td.innerHTML = scoreFromRecord(rec).replace(' / ','<br>');
+          else if(rec.type === 'partial') td.innerHTML = `${rec.s1b}-${rec.s1a}`;
+          else td.innerHTML = `${rec.s1b}-${rec.s1a}<br>${rec.s2b}-${rec.s2a}`;
+        } else {
+          td.className = 'pending';
+          td.textContent = '·';
+        }
+      }
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  document.getElementById('crossMeta').textContent = `${done/2} celdas con resultado visible`;
+}
+
+function renderList(){
+  const list = visibleMatches();
+  const tb = document.getElementById('matchesTbody'); tb.innerHTML = '';
+  document.getElementById('matchCount').textContent = `${list.length} enfrentamientos visibles`;
+  list.forEach(m => {
+    const rec = getMatchRecord(m);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${m.a}</td><td>${m.b}</td><td>${rec ? scoreFromRecord(rec) : '—'}</td><td><span class="status ${rec ? 'ok' : 'pending'}">${rec ? 'Con resultado' : 'Pendiente'}</span></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function renderEditorSelectors(){
+  const a = document.getElementById('playerA');
+  const b = document.getElementById('playerB');
+  a.innerHTML = ''; b.innerHTML = '';
+  categoryPlayers().forEach(p => {
+    const oa = document.createElement('option'); oa.value = p; oa.textContent = p; a.appendChild(oa);
+    const ob = document.createElement('option'); ob.value = p; ob.textContent = p; b.appendChild(ob);
+  });
+  a.value = categoryPlayers()[0];
+  b.value = categoryPlayers()[1];
+  a.onchange = syncEditor;
+  b.onchange = syncEditor;
+  renderTypeButtons();
+  syncEditor();
+}
+
+function renderTypeButtons(){
+  const items = [
+    {id:'full', text:'Partido completo'},
+    {id:'partial', text:'Solo 1 set'},
+    {id:'tie', text:'Empate a 1 set'}
+  ];
+  const box = document.getElementById('typeBtns'); box.innerHTML = '';
+  items.forEach(item => {
+    const btn = document.createElement('button');
+    btn.className = 'typeBtn' + (state.resultType === item.id ? ' active' : '');
+    btn.textContent = item.text;
+    btn.type = 'button';
+    btn.onclick = () => { state.resultType = item.id; renderTypeButtons(); updateScoreNote(); };
+    box.appendChild(btn);
+  });
+}
+
+function updateScoreNote(){
+  let txt = '';
+  if(state.resultType === 'full') txt = 'Introduce dos sets válidos. La victoria suma 3 puntos y la derrota 1 punto.';
+  if(state.resultType === 'partial') txt = 'Introduce solo el primer set. Se guardará como resultado parcial: 2 puntos para quien gana ese set y 1 para el otro jugador.';
+  if(state.resultType === 'tie') txt = 'Introduce dos sets con ganadores distintos. Cada jugador sumará 2 puntos.';
+  document.getElementById('scoreNote').textContent = txt;
+}
+
+function syncEditor(){
+  const a = document.getElementById('playerA');
+  const b = document.getElementById('playerB');
+  if(a.value === b.value){
+    const alt = categoryPlayers().find(p => p !== a.value) || a.value;
+    b.value = alt;
+  }
+  const pair = [a.value, b.value].sort((x,y) => playerNum(x) - playerNum(y));
+  const rec = getBucket()[matchKey(state.category, pair[0], pair[1])];
+  document.getElementById('editHint').textContent = `${stripNum(pair[0])} vs ${stripNum(pair[1])}`;
+  document.getElementById('s1a').value = rec ? (pair[0] === a.value ? rec.s1a : rec.s1b) : '';
+  document.getElementById('s1b').value = rec ? (pair[0] === a.value ? rec.s1b : rec.s1a) : '';
+  document.getElementById('s2a').value = rec && rec.type !== 'partial' ? (pair[0] === a.value ? rec.s2a : rec.s2b) : '';
+  document.getElementById('s2b').value = rec && rec.type !== 'partial' ? (pair[0] === a.value ? rec.s2b : rec.s2a) : '';
+  state.resultType = rec ? rec.type : state.resultType;
+  if(state.resultType === 'tie' && rec && rec.type === 'full'){
+    const set1A = rec.s1a > rec.s1b; const set2A = rec.s2a > rec.s2b;
+    if(set1A !== set2A) state.resultType = 'tie'; else state.resultType = 'full';
+  }
+  renderTypeButtons();
+  updateScoreNote();
+}
+
+function collectEditorData(){
+  const p1 = document.getElementById('playerA').value;
+  const p2 = document.getElementById('playerB').value;
+  if(p1 === p2) throw new Error('Los dos jugadores no pueden ser el mismo.');
+  const s1a = Number(document.getElementById('s1a').value);
+  const s1b = Number(document.getElementById('s1b').value);
+  const raw2a = document.getElementById('s2a').value;
+  const raw2b = document.getElementById('s2b').value;
+  const pair = [p1,p2].sort((x,y) => playerNum(x) - playerNum(y));
+  const p1IsA = pair[0] === p1;
+
+  if(!validSet(s1a, s1b)) throw new Error('El set 1 no es válido.');
+
+  let rec;
+  if(state.resultType === 'partial'){
+    rec = p1IsA ? { type:'partial', s1a, s1b } : { type:'partial', s1a:s1b, s1b:s1a };
+  } else {
+    const s2a = Number(raw2a), s2b = Number(raw2b);
+    if(!validSet(s2a, s2b)) throw new Error('El set 2 no es válido.');
+    const win1 = s1a > s1b;
+    const win2 = s2a > s2b;
+    if(state.resultType === 'tie' && win1 === win2) throw new Error('Para empate a un set, cada set debe ganarlo un jugador distinto.');
+    if(state.resultType === 'full' && win1 !== win2) {
+      if(!confirm('Has introducido un empate a un set. ¿Quieres guardarlo igualmente como empate?')) return null;
+    }
+    rec = p1IsA ? { type:'full', s1a, s1b, s2a, s2b } : { type:'full', s1a:s1b, s1b:s1a, s2a:s2b, s2b:s2a };
+  }
+  rec.updatedAt = new Date().toISOString();
+  rec.source = 'web';
+  return { pair, rec };
+}
+
+async function saveResult(){
+  try{
+    const data = collectEditorData();
+    if(!data) return;
+    const key = matchKey(state.category, data.pair[0], data.pair[1]);
+    getBucket()[key] = data.rec;
+    localSave();
+    try{
+      await workerRequest({ action:'upsert', matchId:key, score:data.rec });
+      state.syncLabel = 'Online';
+    }catch(e){
+      state.syncLabel = 'Modo local';
+    }
+    renderAll();
+    alert('✅ Resultado guardado.');
+  }catch(e){
+    alert(e.message || String(e));
+  }
+}
+
+async function clearResult(){
+  const p1 = document.getElementById('playerA').value;
+  const p2 = document.getElementById('playerB').value;
+  const pair = [p1,p2].sort((x,y) => playerNum(x) - playerNum(y));
+  const key = matchKey(state.category, pair[0], pair[1]);
+  if(!getBucket()[key]){ alert('Ese enfrentamiento no tiene resultado guardado.'); return; }
+  if(!confirm(`¿Borrar el resultado de:\n\n${stripNum(pair[0])} vs ${stripNum(pair[1])}?`)) return;
+  delete getBucket()[key];
+  localSave();
+  try{ await workerRequest({ action:'delete', matchId:key }); state.syncLabel = 'Online'; }
+  catch(e){ state.syncLabel = 'Modo local'; }
+  renderAll();
+}
+
+function renderAll(){
+  renderSync();
+  renderTabs();
+  renderFilters();
+  renderMeta();
+  renderStandings();
+  renderPlayerStats();
+  renderCrossTable();
+  renderList();
+  renderEditorSelectors();
+}
+
+document.getElementById('saveBtn').onclick = saveResult;
+document.getElementById('clearBtn').onclick = clearResult;
+document.getElementById('refreshBtn').onclick = refreshOnlineOnce;
+
+state.results = localLoad();
+renderAll();
+refreshOnlineOnce();
+setInterval(refreshOnlineOnce, 30000);
+</script>
+</body>
+</html>
