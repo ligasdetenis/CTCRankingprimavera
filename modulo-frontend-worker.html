@@ -1,0 +1,102 @@
+<!-- Añade este bloque dentro de tu HTML donde quieras mostrar el módulo -->
+<section class="card">
+  <div class="cardHead">
+    <h2>🎾 Consulta de pistas</h2>
+    <small id="courtModuleMeta">Cloudflare Worker</small>
+  </div>
+  <div class="pad">
+    <div class="controls" style="grid-template-columns:1fr 1fr 1fr auto">
+      <div>
+        <label>Fecha inicio</label>
+        <input type="date" id="courtFrom" value="2026-03-09" />
+      </div>
+      <div>
+        <label>Fecha fin</label>
+        <input type="date" id="courtTo" value="2026-03-15" />
+      </div>
+      <div>
+        <label>Instalación (opcional)</label>
+        <input type="text" id="courtFacility" placeholder="Todas" />
+      </div>
+      <div style="display:flex;align-items:end">
+        <button id="loadCourtsBtn" class="good">Consultar pistas</button>
+      </div>
+    </div>
+
+    <div class="note" id="courtStatus" style="margin-top:12px">
+      Sin consulta realizada.
+    </div>
+
+    <div class="tableScroll" style="margin-top:12px">
+      <table id="courtTable">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Instalación</th>
+            <th>Horas libres</th>
+          </tr>
+        </thead>
+        <tbody id="courtTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<script>
+const WORKER_URL = "https://TU-WORKER.workers.dev/api/ocupacion-burgos";
+
+function renderCourtRows(rows){
+  const tbody = document.getElementById('courtTableBody');
+  tbody.innerHTML = '';
+  for(const row of rows){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${row.fecha || ''}</td>
+      <td>${row.instalacion || ''}</td>
+      <td>${Array.isArray(row.horas_libres) ? row.horas_libres.join(', ') : ''}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+async function cargarOcupacionBurgos(){
+  const desde = document.getElementById('courtFrom').value;
+  const hasta = document.getElementById('courtTo').value;
+  const instalacion = document.getElementById('courtFacility').value.trim();
+  const status = document.getElementById('courtStatus');
+  const meta = document.getElementById('courtModuleMeta');
+
+  if(!desde || !hasta){
+    status.textContent = 'Selecciona una fecha de inicio y una fecha de fin.';
+    return;
+  }
+
+  status.textContent = 'Consultando...';
+  meta.textContent = 'Cargando';
+
+  try{
+    const params = new URLSearchParams({
+      desde,
+      hasta,
+      actividad: 'tenis',
+      instalacion
+    });
+
+    const resp = await fetch(`${WORKER_URL}?${params.toString()}`);
+    if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+    const data = await resp.json();
+    if(!data.ok) throw new Error(data.error || 'Error desconocido');
+
+    const filas = data.resultados || [];
+    renderCourtRows(filas);
+    status.textContent = filas.length ? `Consulta completada. ${filas.length} filas.` : 'No hay resultados.';
+    meta.textContent = `${filas.length} filas`;
+  }catch(err){
+    status.textContent = `Error: ${err.message}`;
+    meta.textContent = 'Error';
+  }
+}
+
+document.getElementById('loadCourtsBtn').addEventListener('click', cargarOcupacionBurgos);
+</script>
